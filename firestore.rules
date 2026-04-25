@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isValidScore(data) {
+      return data.keys().hasAll(['userName', 'score', 'gameType', 'timestamp']) 
+          && data.keys().size() == 4
+          && data.userName is string && data.userName.size() > 0 && data.userName.size() <= 20
+          && data.score is number && data.score >= 0 && data.score <= 10000
+          && data.gameType in ['memory', 'addition']
+          && data.timestamp == request.time;
+    }
+
+    // --- Collections ---
+    match /scores/{scoreId} {
+      // 0. Path Variable Hardening
+      allow get: if isValidId(scoreId);
+      
+      // 8. Secure List Queries (Limit by gameType usually handled by query, but we allow list for everyone)
+      allow list: if true; 
+
+      allow create: if isSignedIn() 
+                    && isValidId(scoreId)
+                    && isValidScore(incoming());
+      
+      // Immortality: No updates or deletes allowed for scores
+      allow update, delete: if false;
+    }
+  }
+}

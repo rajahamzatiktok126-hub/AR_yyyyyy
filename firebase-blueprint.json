@@ -1,0 +1,36 @@
+{
+  "entities": {
+    "Score": {
+      "title": "Score",
+      "description": "A game score entry for the leaderboard.",
+      "type": "object",
+      "properties": {
+        "userName": {
+          "type": "string",
+          "description": "The name or emoji of the player."
+        },
+        "score": {
+          "type": "number",
+          "description": "The points earned in the game session."
+        },
+        "gameType": {
+          "type": "string",
+          "enum": ["memory", "addition"],
+          "description": "The type of game played."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the score was recorded."
+        }
+      },
+      "required": ["userName", "score", "gameType", "timestamp"]
+    }
+  },
+  "firestore": {
+    "scores/{scoreId}": {
+      "schema": "Score",
+      "description": "Global leaderboard scores."
+    }
+  }
+}
